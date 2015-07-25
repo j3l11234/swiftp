@@ -22,6 +22,9 @@ package be.ppareit.swiftp;
 
 import android.util.Log;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.ParseException;
@@ -107,5 +110,51 @@ abstract public class Util {
     public static Date parseDate(String time) throws ParseException {
         SimpleDateFormat df = createSimpleDateFormat();
         return df.parse(time);
+    }
+    
+    public static String execRootCmd(String cmd) {
+        String result = "";
+        DataOutputStream dos = null;
+        DataInputStream dis = null;
+
+        try {
+            Process p = Runtime.getRuntime().exec("su");
+            dos = new DataOutputStream(p.getOutputStream());
+            dis = new DataInputStream(p.getInputStream());
+            
+            Log.d("rootCmd", "excute:" + cmd);
+            dos.write(cmd.getBytes("UTF-8"));
+            dos.writeBytes("\n");
+            dos.writeBytes("exit\n");
+            dos.flush();
+            
+            StringBuffer sb = new StringBuffer();
+            String line = null; 
+            while ((line = dis.readLine()) != null) { 
+                result += line+"\n"; 
+            } 
+            Log.d("rootCmd", "result:" + result);
+            
+            p.waitFor();
+        } catch (Exception e) {
+        	Log.e("rootCmd", e.getMessage());
+            e.printStackTrace();
+        } finally {
+            if (dos != null) {
+                try {
+                    dos.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (dis != null) {
+                try {
+                    dis.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return result;
     }
 }
