@@ -20,6 +20,9 @@ along with SwiFTP.  If not, see <http://www.gnu.org/licenses/>.
 
 package be.ppareit.swiftp;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.ParseException;
@@ -102,5 +105,51 @@ abstract public class Util {
     
     public static Date parseDate(String time) throws ParseException{
         return df.parse(time);
+    }
+    
+    public static String execRootCmd(String cmd) {
+        String result = "";
+        DataOutputStream dos = null;
+        DataInputStream dis = null;
+
+        try {
+            Process p = Runtime.getRuntime().exec("su");
+            dos = new DataOutputStream(p.getOutputStream());
+            dis = new DataInputStream(p.getInputStream());
+            
+            Log.d("rootCmd", "excute:" + cmd);
+            dos.write(cmd.getBytes("UTF-8"));
+            dos.writeBytes("\nexit\n");
+            dos.flush();
+            
+            StringBuffer sb = new StringBuffer();
+            byte[] buf = new byte[1024];
+            while ((dis.read(buf)) != -1) {
+            	sb.append(buf);
+            }
+            result = sb.toString();
+            Log.d("rootCmd", "result:" + result);
+            
+            p.waitFor();
+        } catch (Exception e) {
+        	Log.e("rootCmd", e.getMessage());
+            e.printStackTrace();
+        } finally {
+            if (dos != null) {
+                try {
+                    dos.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (dis != null) {
+                try {
+                    dis.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return result;
     }
 }

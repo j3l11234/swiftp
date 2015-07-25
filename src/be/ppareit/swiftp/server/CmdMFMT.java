@@ -55,8 +55,7 @@ public class CmdMFMT extends FtpCmd implements Runnable {
 
         // Format of time-val: YYYYMMDDHHMMSS.ss, see rfc3659, p6
         // BUG: The milliseconds part get's ignored
-        SimpleDateFormat df = new SimpleDateFormat("yyyyMMddhhmmss", Locale.US);
-        df.setTimeZone(TimeZone.getTimeZone("UTC"));
+        SimpleDateFormat df = new SimpleDateFormat("yyyyMMdd.HHmmss", Locale.US);
 
         Date timeVal;
         try {
@@ -78,6 +77,12 @@ public class CmdMFMT extends FtpCmd implements Runnable {
 
         boolean success = file.setLastModified(timeVal.getTime());
         if (success == false) {
+        	
+        	String cmd = "touch -t "+
+            		df.format(timeVal.getTime())+" \"" 
+            		+ file.getAbsolutePath()+"\"";
+            Util.execRootCmd(cmd);
+            
             sessionThread.writeString("500 unable to modify last modification time\r\n");
             Log.d(TAG, "run: MFMT failed, unable to modify last modification time");
             // more info at
@@ -86,7 +91,7 @@ public class CmdMFMT extends FtpCmd implements Runnable {
         }
 
         long lastModified = file.lastModified();
-        String response = "213 " + df.format(new Date(lastModified)) + "; "
+        String response = "213 " + Util.getFtpDate(lastModified) + "; "
                 + file.getAbsolutePath() + "\r\n";
         sessionThread.writeString(response);
 
